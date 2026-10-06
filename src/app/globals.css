@@ -1,26 +1,78 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0f131d;
+  --foreground: #dfe2f1;
+  --card-bg: #171b26;
+  --card-subtle: #1c1f2a;
+  --card-high: #262a35;
+  --border-subtle: #242c3d;
+  --border-strong: #364257;
+  --primary: #8ed5ff;
+  --primary-glow: rgba(142, 213, 255, 0.15);
+  --secondary: #4edea3;
+  --secondary-glow: rgba(78, 222, 163, 0.15);
+  --error: #ff5449;
+  --error-glow: rgba(255, 84, 73, 0.15);
+  --muted: #8c9ba8;
+}
+
+html.light {
+  --background: #f4f6fa;
+  --foreground: #111827;
+  --card-bg: #ffffff;
+  --card-subtle: #f0f3f8;
+  --card-high: #e2e7ef;
+  --border-subtle: #e1e6ed;
+  --border-strong: #cbd5e1;
+  --primary: #0070ba;
+  --primary-glow: rgba(0, 112, 186, 0.12);
+  --secondary: #0a8a55;
+  --secondary-glow: rgba(10, 138, 85, 0.12);
+  --error: #dc2626;
+  --error-glow: rgba(220, 38, 38, 0.12);
+  --muted: #64748b;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, monospace;
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* Subtle pulse for online indicator */
+@keyframes beacon-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.92);
+  }
+}
+
+.animate-beacon {
+  animation: beacon-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Smooth row highlight when new activity arrives */
+@keyframes new-row-flash {
+  0% {
+    background-color: var(--primary-glow);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.animate-new-row {
+  animation: new-row-flash 2.5s ease-out;
 }

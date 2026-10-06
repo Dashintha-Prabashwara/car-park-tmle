@@ -1,69 +1,122 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useCarParkStatus } from "@/hooks/useCarParkStatus";
+import { Header } from "@/components/Header";
+import { OfflineBanner } from "@/components/OfflineBanner";
+import { OccupancyHero } from "@/components/OccupancyHero";
+import { BayCards } from "@/components/BayCards";
+import { LotSchematic } from "@/components/LotSchematic";
+import { VehiclesTodayCard } from "@/components/VehiclesTodayCard";
+import { RecentActivity } from "@/components/RecentActivity";
+import { AlertCircle, RefreshCw } from "lucide-react";
+
+export default function SmartCarParkPage() {
+  const {
+    status,
+    isLoading,
+    error,
+    isOnline,
+    secondsSinceLastSeen,
+    connectionMode,
+    refetch,
+  } = useCarParkStatus();
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <div className="min-h-screen flex flex-col bg-[var(--background)] text-[var(--foreground)] selection:bg-sky-500/20 selection:text-sky-300">
+      {/* 1. Header */}
+      <Header
+        isOnline={isOnline}
+        serverTime={status?.serverTime ?? null}
+        connectionMode={connectionMode}
+      />
+
+      {/* Controller Offline Banner */}
+      <OfflineBanner
+        isOnline={isOnline}
+        lastSeen={status?.lastSeen ?? null}
+        secondsSinceLastSeen={secondsSinceLastSeen}
+      />
+
+      {/* Main Telemetry Body */}
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Loading Skeleton */}
+        {isLoading && !status ? (
+          <div className="w-full flex flex-col gap-6 animate-pulse">
+            <div className="h-64 rounded-2xl bg-[var(--card-bg)] border border-[var(--border-subtle)]" />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="h-44 rounded-xl bg-[var(--card-bg)] border border-[var(--border-subtle)]" />
+              <div className="h-44 rounded-xl bg-[var(--card-bg)] border border-[var(--border-subtle)]" />
+              <div className="h-44 rounded-xl bg-[var(--card-bg)] border border-[var(--border-subtle)]" />
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <div className="lg:col-span-6 h-80 rounded-2xl bg-[var(--card-bg)] border border-[var(--border-subtle)]" />
+              <div className="lg:col-span-6 h-80 rounded-2xl bg-[var(--card-bg)] border border-[var(--border-subtle)]" />
+            </div>
+          </div>
+        ) : error && !status ? (
+          /* Error State */
+          <div className="w-full py-16 flex flex-col items-center justify-center text-center">
+            <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 mb-4">
+              <AlertCircle className="w-7 h-7" />
+            </div>
+            <h2 className="text-xl font-bold uppercase tracking-tight text-[var(--foreground)]">
+              Unable to Load Telemetry Stream
+            </h2>
+            <p className="text-sm font-mono text-[var(--muted)] mt-1.5 max-w-md">
+              {error}. Verify that your MongoDB connection URI is configured in your environment.
+            </p>
+            <button
+              onClick={() => refetch()}
+              className="mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-sky-500 text-slate-950 font-bold font-mono text-xs uppercase tracking-wider hover:bg-sky-400 transition-colors focus:ring-2 focus:ring-sky-400"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+              <RefreshCw className="w-4 h-4" />
+              <span>Retry Connection</span>
+            </button>
+          </div>
+        ) : status ? (
+          /* Live Dashboard Layout */
+          <div className="flex flex-col gap-6 sm:gap-8">
+            {/* Top-to-Bottom Structure */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
+              {/* Left Column: Spaces Free Hero, Bay Cards & Vehicles Today */}
+              <div className="lg:col-span-6 flex flex-col gap-6">
+                {/* 2. Very large count of free spaces */}
+                <OccupancyHero free={status.free} totalBays={3} />
+
+                {/* 5. Vehicles Today Count */}
+                <VehiclesTodayCard vehiclesToday={status.vehiclesToday} />
+
+                {/* 3. Three Bay Cards (P1, P2, P3) */}
+                <BayCards bays={status.bays} />
+              </div>
+
+              {/* Right Column: Schematic & Recent Activity */}
+              <div className="lg:col-span-6 flex flex-col gap-6">
+                {/* 4. Minimal flat top-down schematic */}
+                <LotSchematic bays={status.bays} free={status.free} />
+
+                {/* 6. Recent Activity Telemetry Table */}
+                <RecentActivity events={status.recent} />
+              </div>
+            </div>
+          </div>
+        ) : null}
       </main>
+
+      {/* Footer */}
+      <footer className="w-full border-t border-[var(--border-subtle)] bg-[var(--background)] py-5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-mono text-[var(--muted)]">
+          <div className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            <span className="uppercase font-semibold">SMART CAR PARK PHYSICAL IOT SYSTEM</span>
+            <span>•</span>
+            <span>ESP32 WI-FI HOTSPOT TELEMETRY</span>
+          </div>
+          <div>
+            <span>TIMEZONE: ASIA/COLOMBO (+05:30)</span>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
