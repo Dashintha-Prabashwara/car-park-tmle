@@ -1,7 +1,7 @@
 import { RecentEvent } from "./types";
 
 /**
- * Formats a Date or ISO timestamp into 24-hour time in Asia/Colombo timezone.
+ * Formats a Date or ISO timestamp into 12-hour AM/PM time in Asia/Colombo timezone.
  */
 export function formatColomboTime(
   dateInput: string | Date | null | undefined,
@@ -12,12 +12,12 @@ export function formatColomboTime(
     const d = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
     if (isNaN(d.getTime())) return "-";
 
-    return new Intl.DateTimeFormat("en-GB", {
+    return new Intl.DateTimeFormat("en-US", {
       timeZone: "Asia/Colombo",
       hour: "2-digit",
       minute: "2-digit",
       ...(includeSeconds ? { second: "2-digit" } : {}),
-      hour12: false,
+      hour12: true,
     }).format(d);
   } catch {
     return "-";
