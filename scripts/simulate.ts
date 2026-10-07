@@ -131,10 +131,17 @@ class Esp32Simulator {
         });
       });
 
-      req.on("error", (err) => {
-        console.error(
-          `\x1b[31m[Connection Error]\x1b[0m Unable to reach ${this.targetUrl}: ${err.message}`
-        );
+      req.on("error", (err: NodeJS.ErrnoException) => {
+        if (err.code === "ECONNREFUSED") {
+          console.error(
+            `\x1b[31m[Connection Error]\x1b[0m Cannot connect to ${this.targetUrl}.\n` +
+            `\x1b[33mTip:\x1b[0m Ensure your Next.js server is running in another terminal (\x1b[36mnpm run dev\x1b[0m).`
+          );
+        } else {
+          console.error(
+            `\x1b[31m[Connection Error]\x1b[0m Unable to reach ${this.targetUrl}: ${err.message}`
+          );
+        }
         resolve(false);
       });
 
