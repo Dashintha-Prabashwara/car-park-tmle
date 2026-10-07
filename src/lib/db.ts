@@ -113,72 +113,54 @@ export function getColomboMidnightUTC(now: Date = new Date()): Date {
  * and records non-heartbeat events.
  */
 export async function processEsp32Update(payload: UpdatePayload): Promise<void> {
-  await ensureDbInitialized();
   const pool = getPool();
   const now = new Date();
 
-  // 1. Update device last_seen on EVERY request, including HEARTBEAT
-  await pool.query(
-    `
-    INSERT INTO device (id, last_seen)
-    VALUES ('esp32', ?)
-    ON DUPLICATE KEY UPDATE last_seen = VALUES(last_seen)
-    `,
-    [now]
+  const p1 = payload.p1 === 1, p2 = payload.p2 === 1, p3 = payload.p3 === 1;
+
+  const tasks: Promise<unknown>[] = [];
+
+  // 1. device heartbeat
+  tasks.push(
+    pool.query(
+      `INSERT INTO device (id, last_seen) VALUES ('esp32', ?)
+       ON DUPLICATE KEY UPDATE last_seen = VALUES(last_seen)`,
+      [now]
+    )
   );
 
-  // 2. Update bays: update changed_at ONLY when occupied actually changes
-  const [existingBayRows] = await pool.query<BayDbRow[]>(
-    "SELECT id, occupied, changed_at FROM bays WHERE id IN (1, 2, 3)"
+  // 2. all three bays in ONE statement; changed_at only moves when occupied flips
+  //    (changed_at must be listed BEFORE occupied so it sees the old value)
+  tasks.push(
+    pool.query(
+      `INSERT INTO bays (id, occupied, changed_at)
+       VALUES (1, ?, ?), (2, ?, ?), (3, ?, ?)
+       ON DUPLICATE KEY UPDATE
+         changed_at = IF(occupied <> VALUES(occupied), VALUES(changed_at), changed_at),
+         occupied   = VALUES(occupied)`,
+      [p1, now, p2, now, p3, now]
+    )
   );
 
-  const bayMap = new Map<number, BayDbRow>(
-    existingBayRows.map((b) => [b.id, b])
-  );
-
-  const bayStates: Record<1 | 2 | 3, boolean> = {
-    1: payload.p1 === 1,
-    2: payload.p2 === 1,
-    3: payload.p3 === 1,
-  };
-
-  for (const bayId of [1, 2, 3] as const) {
-    const isOccupied = bayStates[bayId];
-    const existing = bayMap.get(bayId);
-
-    if (!existing) {
-      await pool.query(
-        "INSERT INTO bays (id, occupied, changed_at) VALUES (?, ?, ?)",
-        [bayId, isOccupied, now]
-      );
-    } else if (Boolean(existing.occupied) !== isOccupied) {
-      await pool.query(
-        "UPDATE bays SET occupied = ?, changed_at = ? WHERE id = ?",
-        [isOccupied, now, bayId]
-      );
-    }
-  }
-
-  // 3. Store event in 'events' table (do NOT store HEARTBEAT events)
+  // 3. event row (not for HEARTBEAT)
   if (payload.event !== "HEARTBEAT") {
     let bayValue: number | null = null;
     let stateValue: boolean | null = null;
-
     if (typeof payload.bay === "number") {
       bayValue = payload.bay;
-      if (payload.bay === 1) stateValue = payload.p1 === 1;
-      else if (payload.bay === 2) stateValue = payload.p2 === 1;
-      else if (payload.bay === 3) stateValue = payload.p3 === 1;
+      if (payload.bay === 1) stateValue = p1;
+      else if (payload.bay === 2) stateValue = p2;
+      else if (payload.bay === 3) stateValue = p3;
     }
-
-    await pool.query(
-      `
-      INSERT INTO events (created_at, event, bay, state)
-      VALUES (?, ?, ?, ?)
-      `,
-      [now, payload.event, bayValue, stateValue]
+    tasks.push(
+      pool.query(
+        "INSERT INTO events (created_at, event, bay, state) VALUES (?, ?, ?, ?)",
+        [now, payload.event, bayValue, stateValue]
+      )
     );
   }
+
+  await Promise.all(tasks);
 }
 
 /**
