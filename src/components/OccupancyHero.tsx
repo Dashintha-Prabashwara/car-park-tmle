@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, ShieldAlert, CheckCircle2 } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 
 interface OccupancyHeroProps {
   free: number;
@@ -27,10 +27,6 @@ export function OccupancyHero({ free, totalBays = 3 }: OccupancyHeroProps) {
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-mono tracking-widest uppercase font-semibold text-[var(--muted)]">
               REAL-TIME SPACE AVAILABILITY
-            </span>
-            <span className="text-slate-500">•</span>
-            <span className="text-[11px] font-mono text-sky-400 font-semibold uppercase">
-              LIVE DOCK SENSORS
             </span>
           </div>
 
@@ -59,7 +55,7 @@ export function OccupancyHero({ free, totalBays = 3 }: OccupancyHeroProps) {
           </div>
         </div>
 
-        {/* Facility Load & Barrier Directive */}
+        {/* Facility Load */}
         <div className="flex flex-col md:items-end justify-between border-t md:border-t-0 border-[var(--border-subtle)] pt-4 md:pt-0">
           <div className="md:text-right">
             <span className="text-xs font-mono text-[var(--muted)] uppercase tracking-wider">
@@ -68,29 +64,6 @@ export function OccupancyHero({ free, totalBays = 3 }: OccupancyHeroProps) {
             <div className="font-mono text-3xl sm:text-4xl font-bold text-[var(--foreground)] mt-1 tabular-nums">
               {percentage}%
             </div>
-          </div>
-
-          <div className="mt-4 md:text-right">
-            <span
-              id="gate-directive-status"
-              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold uppercase tracking-wider border ${
-                isFull
-                  ? "bg-rose-500/15 text-rose-400 border-rose-500/40"
-                  : "bg-emerald-500/15 text-emerald-400 border-emerald-500/40"
-              }`}
-            >
-              {isFull ? (
-                <>
-                  <ShieldAlert className="w-3.5 h-3.5" />
-                  <span>Entry Barrier Locked</span>
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Entry Gate Open / Ready</span>
-                </>
-              )}
-            </span>
           </div>
         </div>
       </div>
@@ -125,10 +98,7 @@ export function OccupancyHero({ free, totalBays = 3 }: OccupancyHeroProps) {
           <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 animate-pulse" />
           <div className="flex flex-col">
             <span className="text-xs sm:text-sm font-mono font-bold uppercase tracking-wider text-white">
-              CAR PARK FULL — ENTRY GATE CLOSED
-            </span>
-            <span className="text-xs text-rose-300">
-              Inbound vehicles will encounter locked servo barrier until an occupied bay is vacated.
+              CAR PARK FULL
             </span>
           </div>
         </div>

@@ -1,15 +1,14 @@
 "use client";
 
 import { BayStatus } from "@/lib/types";
-import { ArrowRight, ShieldCheck, ShieldAlert, Car, Download } from "lucide-react";
+import { Car, Download } from "lucide-react";
 
 interface LotSchematicProps {
   bays: BayStatus[];
-  free: number;
+  free?: number;
 }
 
-export function LotSchematic({ bays, free }: LotSchematicProps) {
-  const isFull = free === 0;
+export function LotSchematic({ bays }: LotSchematicProps) {
   const sortedBays = [...bays].sort((a, b) => a.id - b.id);
 
   return (
@@ -36,59 +35,8 @@ export function LotSchematic({ bays, free }: LotSchematicProps) {
 
       {/* Blueprint Schematic Field */}
       <div className="mt-5 rounded-xl bg-[var(--card-subtle)] border border-[var(--border-subtle)] p-4 sm:p-6 relative">
-        {/* Entry & Exit Gate Bar */}
-        <div className="flex items-center justify-between gap-2 mb-6">
-          {/* Entry Gate (Left) */}
-          <div
-            id="schematic-entry-gate"
-            className={`flex items-center gap-2.5 px-3 py-2 rounded-lg border transition-all duration-300 ${
-              isFull
-                ? "bg-rose-500/10 border-rose-500/40 text-rose-400"
-                : "bg-emerald-500/10 border-emerald-500/40 text-emerald-400"
-            }`}
-          >
-            {isFull ? (
-              <ShieldAlert className="w-4 h-4 text-rose-400 shrink-0" />
-            ) : (
-              <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-            )}
-            <div className="flex flex-col">
-              <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--muted)]">
-                ENTRY GATE (SERVO)
-              </span>
-              <span className="text-xs font-mono font-bold">
-                {isFull ? "[CLOSED / FULL]" : "[OPEN / READY]"}
-              </span>
-            </div>
-          </div>
-
-          {/* Lane Directive Corridor Arrows */}
-          <div className="hidden sm:flex items-center gap-1 text-[var(--muted)] opacity-60 font-mono text-[11px] uppercase tracking-widest">
-            <span>TRAFFIC FLOW</span>
-            <ArrowRight className="w-3.5 h-3.5 text-sky-400" />
-            <ArrowRight className="w-3.5 h-3.5 text-sky-400" />
-            <ArrowRight className="w-3.5 h-3.5 text-sky-400" />
-          </div>
-
-          {/* Exit Gate (Right) */}
-          <div
-            id="schematic-exit-gate"
-            className="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-[var(--border-strong)] bg-[var(--card-high)] text-[var(--foreground)]"
-          >
-            <div className="flex flex-col text-right">
-              <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--muted)]">
-                EXIT GATE (SERVO)
-              </span>
-              <span className="text-xs font-mono font-bold text-sky-400">
-                [ARMED / SENSOR]
-              </span>
-            </div>
-            <div className="w-2.5 h-2.5 rounded-full bg-sky-400 animate-pulse shrink-0" />
-          </div>
-        </div>
-
         {/* 3 Bays Layout Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 py-4 border-y border-dashed border-[var(--border-strong)] relative">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {sortedBays.map((bay) => {
             const isOccupied = bay.occupied;
 
@@ -136,23 +84,9 @@ export function LotSchematic({ bays, free }: LotSchematicProps) {
                     </div>
                   )}
                 </div>
-
-                {/* Sensor Line */}
-                <div className="w-full text-center border-t border-[var(--border-subtle)] pt-1.5 font-mono text-[10px] text-[var(--muted)]">
-                  ULTRASONIC SENSOR #{bay.id}
-                </div>
               </div>
             );
           })}
-        </div>
-
-        {/* Corridor Technical Specs Footnote */}
-        <div className="flex flex-wrap items-center justify-between pt-3 text-[11px] font-mono text-[var(--muted)]">
-          <span className="flex items-center gap-1">
-            <span className="text-emerald-400">•</span> GATE INTERLOCK ACTIVE
-          </span>
-          <span>ULTRASONIC THRESHOLD: &lt; 10 CM (3X VERIFIED)</span>
-          <span className="text-sky-400">PHYSICAL SENSORS SYNCHRONIZED</span>
         </div>
       </div>
     </div>

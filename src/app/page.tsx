@@ -4,7 +4,6 @@ import { useCarParkStatus } from "@/hooks/useCarParkStatus";
 import { Header } from "@/components/Header";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { OccupancyHero } from "@/components/OccupancyHero";
-import { BayCards } from "@/components/BayCards";
 import { LotSchematic } from "@/components/LotSchematic";
 import { VehiclesTodayCard } from "@/components/VehiclesTodayCard";
 import { RecentActivity } from "@/components/RecentActivity";
@@ -43,11 +42,7 @@ export default function SmartCarParkPage() {
         {isLoading && !status ? (
           <div className="w-full flex flex-col gap-6 animate-pulse">
             <div className="h-64 rounded-2xl bg-[var(--card-bg)] border border-[var(--border-subtle)]" />
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="h-44 rounded-xl bg-[var(--card-bg)] border border-[var(--border-subtle)]" />
-              <div className="h-44 rounded-xl bg-[var(--card-bg)] border border-[var(--border-subtle)]" />
-              <div className="h-44 rounded-xl bg-[var(--card-bg)] border border-[var(--border-subtle)]" />
-            </div>
+            <div className="h-44 rounded-xl bg-[var(--card-bg)] border border-[var(--border-subtle)]" />
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               <div className="lg:col-span-6 h-80 rounded-2xl bg-[var(--card-bg)] border border-[var(--border-subtle)]" />
               <div className="lg:col-span-6 h-80 rounded-2xl bg-[var(--card-bg)] border border-[var(--border-subtle)]" />
@@ -78,16 +73,13 @@ export default function SmartCarParkPage() {
           <div className="flex flex-col gap-6 sm:gap-8">
             {/* Top-to-Bottom Structure */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
-              {/* Left Column: Spaces Free Hero, Bay Cards & Vehicles Today */}
+              {/* Left Column: Spaces Free Hero & Vehicles Today */}
               <div className="lg:col-span-6 flex flex-col gap-6">
                 {/* 2. Very large count of free spaces */}
                 <OccupancyHero free={status.free} totalBays={3} />
 
                 {/* 5. Vehicles Today Count */}
                 <VehiclesTodayCard vehiclesToday={status.vehiclesToday} />
-
-                {/* 3. Three Bay Cards (P1, P2, P3) */}
-                <BayCards bays={status.bays} />
               </div>
 
               {/* Right Column: Schematic & Recent Activity */}
@@ -109,11 +101,6 @@ export default function SmartCarParkPage() {
           <div className="flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
             <span className="uppercase font-semibold">SMART CAR PARK PHYSICAL IOT SYSTEM</span>
-            <span>•</span>
-            <span>ESP32 WI-FI HOTSPOT TELEMETRY</span>
-          </div>
-          <div>
-            <span>TIMEZONE: ASIA/COLOMBO (+05:30)</span>
           </div>
         </div>
       </footer>

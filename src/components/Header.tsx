@@ -2,15 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { formatColomboTime } from "@/lib/format";
-import { Activity, Radio, Sun, Moon } from "lucide-react";
+import { Radio, Sun, Moon } from "lucide-react";
 
 interface HeaderProps {
   isOnline: boolean;
   serverTime: string | null;
-  connectionMode: "sse" | "polling";
+  connectionMode?: "sse" | "polling";
 }
 
-export function Header({ isOnline, serverTime, connectionMode }: HeaderProps) {
+export function Header({ isOnline, serverTime }: HeaderProps) {
   const [isDark, setIsDark] = useState(true);
 
   useEffect(() => {
@@ -44,13 +44,6 @@ export function Header({ isOnline, serverTime, connectionMode }: HeaderProps) {
             <Radio className="w-5 h-5 animate-pulse" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] tracking-widest uppercase font-mono font-semibold text-sky-400">
-                SCADA TELEMETRY
-              </span>
-              <span className="text-[10px] text-slate-500 font-mono">•</span>
-              <span className="text-[10px] text-slate-400 font-mono">ESP32-NODE-03B</span>
-            </div>
             <h1 className="text-lg sm:text-xl font-bold tracking-tight text-[var(--foreground)] uppercase">
               Smart Car Park
             </h1>
@@ -74,14 +67,6 @@ export function Header({ isOnline, serverTime, connectionMode }: HeaderProps) {
               }`}
             />
             <span>{isOnline ? "Controller online" : "Controller offline"}</span>
-          </div>
-
-          {/* Connection Mode Pill */}
-          <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded bg-[var(--card-subtle)] border border-[var(--border-subtle)] text-[11px] font-mono text-[var(--muted)]">
-            <Activity className="w-3.5 h-3.5 text-sky-400" />
-            <span className="text-sky-400 font-bold uppercase">{connectionMode}</span>
-            <span>•</span>
-            <span>LIVE</span>
           </div>
 
           {/* Last Updated Server Time */}
