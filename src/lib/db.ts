@@ -171,10 +171,29 @@ export async function getStatusSnapshot(): Promise<CarParkStatus> {
   const pool = getPool();
   const now = new Date();
 
-  // Read bays
-  const [bayRows] = await pool.query<BayDbRow[]>(
-    "SELECT id, occupied, changed_at FROM bays WHERE id IN (1, 2, 3) ORDER BY id ASC"
-  );
+  const colomboMidnight = getColomboMidnightUTC(now);
+
+  // Read bays, device, recent events, and today's vehicle count in parallel
+  const [
+    [bayRows],
+    [deviceRows],
+    [recentRows],
+    [countRows],
+  ] = await Promise.all([
+    pool.query<BayDbRow[]>(
+      "SELECT id, occupied, changed_at FROM bays WHERE id IN (1, 2, 3) ORDER BY id ASC"
+    ),
+    pool.query<DeviceDbRow[]>(
+      "SELECT last_seen FROM device WHERE id = 'esp32' LIMIT 1"
+    ),
+    pool.query<EventDbRow[]>(
+      "SELECT id, created_at, event, bay, state FROM events ORDER BY created_at DESC, id DESC LIMIT 10"
+    ),
+    pool.query<CountDbRow[]>(
+      "SELECT COUNT(*) as cnt FROM events WHERE event = 'ENTRY' AND created_at >= ?",
+      [colomboMidnight]
+    ),
+  ]);
 
   const bayMap = new Map<number, BayDbRow>(bayRows.map((b) => [b.id, b]));
   const formattedBays = ([1, 2, 3] as const).map((id) => {
@@ -190,22 +209,13 @@ export async function getStatusSnapshot(): Promise<CarParkStatus> {
 
   const freeCount = formattedBays.filter((b) => !b.occupied).length;
 
-  // Read device last_seen
-  const [deviceRows] = await pool.query<DeviceDbRow[]>(
-    "SELECT last_seen FROM device WHERE id = 'esp32' LIMIT 1"
-  );
-
-  const lastSeenDate = deviceRows.length > 0 && deviceRows[0].last_seen
-    ? new Date(deviceRows[0].last_seen)
-    : null;
+  const lastSeenDate =
+    deviceRows.length > 0 && deviceRows[0].last_seen
+      ? new Date(deviceRows[0].last_seen)
+      : null;
 
   const isOnline =
     lastSeenDate !== null && now.getTime() - lastSeenDate.getTime() <= 25000;
-
-  // Read recent 10 events (ordered created_at descending)
-  const [recentRows] = await pool.query<EventDbRow[]>(
-    "SELECT id, created_at, event, bay, state FROM events ORDER BY created_at DESC, id DESC LIMIT 10"
-  );
 
   const formattedRecent = recentRows.map((row) => ({
     id: String(row.id),
@@ -216,13 +226,6 @@ export async function getStatusSnapshot(): Promise<CarParkStatus> {
       ? { state: Boolean(row.state) }
       : {}),
   }));
-
-  // Count ENTRY events since midnight in Asia/Colombo
-  const colomboMidnight = getColomboMidnightUTC(now);
-  const [countRows] = await pool.query<CountDbRow[]>(
-    "SELECT COUNT(*) as cnt FROM events WHERE event = 'ENTRY' AND created_at >= ?",
-    [colomboMidnight]
-  );
 
   const vehiclesToday = countRows.length > 0 ? Number(countRows[0].cnt) : 0;
 
