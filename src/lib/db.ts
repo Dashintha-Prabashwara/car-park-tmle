@@ -1,61 +1,90 @@
-import { Db } from "mongodb";
-import clientPromise from "./mongodb";
+import getPool from "./mysql";
 import {
-  BayDocument,
   CarParkStatus,
-  DeviceDocument,
-  EventDocument,
   EventType,
   UpdatePayload,
 } from "./types";
+import { RowDataPacket } from "mysql2/promise";
 
-const DB_NAME = "smartpark";
 let isDbInitialized = false;
 
-/**
- * Returns the MongoDB database instance for 'smartpark'.
- */
-export async function getDb(): Promise<Db> {
-  const client = await clientPromise;
-  return client.db(DB_NAME);
+interface BayDbRow extends RowDataPacket {
+  id: number;
+  occupied: number | boolean;
+  changed_at: Date | string;
+}
+
+interface DeviceDbRow extends RowDataPacket {
+  id: string;
+  last_seen: Date | string;
+}
+
+interface EventDbRow extends RowDataPacket {
+  id: number;
+  created_at: Date | string;
+  event: EventType;
+  bay: number | null;
+  state: number | boolean | null;
+}
+
+interface CountDbRow extends RowDataPacket {
+  cnt: number;
 }
 
 /**
- * Ensures required collections, indexes, and initial bay seeds are in place.
+ * Ensures required MySQL tables and default initial bay seeds are in place.
  */
-export async function ensureDbInitialized(db: Db): Promise<void> {
+export async function ensureDbInitialized(): Promise<void> {
   if (isDbInitialized) return;
 
+  const pool = getPool();
+
   try {
-    const eventsCollection = db.collection<EventDocument>("events");
-    await eventsCollection.createIndex({ createdAt: -1 });
+    // 1. Bays table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS bays (
+        id INT PRIMARY KEY,
+        occupied BOOLEAN NOT NULL DEFAULT FALSE,
+        changed_at DATETIME(3) NOT NULL
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
 
-    const baysCollection = db.collection<BayDocument>("bays");
-    const existingBays = await baysCollection
-      .find({ _id: { $in: [1, 2, 3] } })
-      .toArray();
+    // 2. Device table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS device (
+        id VARCHAR(32) PRIMARY KEY,
+        last_seen DATETIME(3) NOT NULL
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
 
-    const existingIds = new Set(existingBays.map((b) => b._id));
+    // 3. Events table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS events (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        created_at DATETIME(3) NOT NULL,
+        event VARCHAR(32) NOT NULL,
+        bay INT NULL,
+        state BOOLEAN NULL,
+        INDEX idx_created_at (created_at)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    // 4. Ensure initial seed rows for bays 1, 2, 3
     const now = new Date();
-
-    const missingBays: BayDocument[] = [];
-    for (const bayId of [1, 2, 3] as const) {
-      if (!existingIds.has(bayId)) {
-        missingBays.push({
-          _id: bayId,
-          occupied: false,
-          changedAt: now,
-        });
-      }
-    }
-
-    if (missingBays.length > 0) {
-      await baysCollection.insertMany(missingBays);
-    }
+    await pool.query(
+      `
+      INSERT IGNORE INTO bays (id, occupied, changed_at) VALUES 
+        (1, FALSE, ?),
+        (2, FALSE, ?),
+        (3, FALSE, ?)
+      `,
+      [now, now, now]
+    );
 
     isDbInitialized = true;
   } catch (err) {
-    console.error("Failed to initialize database indexes/seeds:", err);
+    console.error("Failed to initialize MySQL schema/seeds:", err);
+    throw err;
   }
 }
 
@@ -80,29 +109,32 @@ export function getColomboMidnightUTC(now: Date = new Date()): Date {
 
 /**
  * Processes an incoming ESP32 update payload.
- * Updates device heartbeat, bay occupancy (updating changedAt ONLY when occupancy flips),
+ * Updates device heartbeat, bay occupancy (updating changed_at ONLY when occupancy flips),
  * and records non-heartbeat events.
  */
 export async function processEsp32Update(payload: UpdatePayload): Promise<void> {
-  const db = await getDb();
-  await ensureDbInitialized(db);
-
+  await ensureDbInitialized();
+  const pool = getPool();
   const now = new Date();
 
-  // 1. Update device lastSeen on EVERY request, including HEARTBEAT
-  const deviceCol = db.collection<DeviceDocument>("device");
-  await deviceCol.updateOne(
-    { _id: "esp32" },
-    { $set: { lastSeen: now } },
-    { upsert: true }
+  // 1. Update device last_seen on EVERY request, including HEARTBEAT
+  await pool.query(
+    `
+    INSERT INTO device (id, last_seen)
+    VALUES ('esp32', ?)
+    ON DUPLICATE KEY UPDATE last_seen = VALUES(last_seen)
+    `,
+    [now]
   );
 
-  // 2. Update bays: update changedAt ONLY when occupied actually changes
-  const baysCol = db.collection<BayDocument>("bays");
-  const existingBays = await baysCol
-    .find({ _id: { $in: [1, 2, 3] } })
-    .toArray();
-  const bayMap = new Map(existingBays.map((b) => [b._id, b]));
+  // 2. Update bays: update changed_at ONLY when occupied actually changes
+  const [existingBayRows] = await pool.query<BayDbRow[]>(
+    "SELECT id, occupied, changed_at FROM bays WHERE id IN (1, 2, 3)"
+  );
+
+  const bayMap = new Map<number, BayDbRow>(
+    existingBayRows.map((b) => [b.id, b])
+  );
 
   const bayStates: Record<1 | 2 | 3, boolean> = {
     1: payload.p1 === 1,
@@ -115,92 +147,102 @@ export async function processEsp32Update(payload: UpdatePayload): Promise<void> 
     const existing = bayMap.get(bayId);
 
     if (!existing) {
-      await baysCol.updateOne(
-        { _id: bayId },
-        { $set: { occupied: isOccupied, changedAt: now } },
-        { upsert: true }
+      await pool.query(
+        "INSERT INTO bays (id, occupied, changed_at) VALUES (?, ?, ?)",
+        [bayId, isOccupied, now]
       );
-    } else if (existing.occupied !== isOccupied) {
-      await baysCol.updateOne(
-        { _id: bayId },
-        { $set: { occupied: isOccupied, changedAt: now } }
+    } else if (Boolean(existing.occupied) !== isOccupied) {
+      await pool.query(
+        "UPDATE bays SET occupied = ?, changed_at = ? WHERE id = ?",
+        [isOccupied, now, bayId]
       );
     }
   }
 
-  // 3. Store event in 'events' collection (do NOT store HEARTBEAT events)
+  // 3. Store event in 'events' table (do NOT store HEARTBEAT events)
   if (payload.event !== "HEARTBEAT") {
-    const eventsCol = db.collection<EventDocument>("events");
-    const eventDoc: EventDocument = {
-      createdAt: now,
-      event: payload.event,
-    };
+    let bayValue: number | null = null;
+    let stateValue: boolean | null = null;
+
     if (typeof payload.bay === "number") {
-      eventDoc.bay = payload.bay;
-      if (payload.bay === 1) eventDoc.state = payload.p1 === 1;
-      else if (payload.bay === 2) eventDoc.state = payload.p2 === 1;
-      else if (payload.bay === 3) eventDoc.state = payload.p3 === 1;
+      bayValue = payload.bay;
+      if (payload.bay === 1) stateValue = payload.p1 === 1;
+      else if (payload.bay === 2) stateValue = payload.p2 === 1;
+      else if (payload.bay === 3) stateValue = payload.p3 === 1;
     }
-    await eventsCol.insertOne(eventDoc);
+
+    await pool.query(
+      `
+      INSERT INTO events (created_at, event, bay, state)
+      VALUES (?, ?, ?, ?)
+      `,
+      [now, payload.event, bayValue, stateValue]
+    );
   }
 }
 
 /**
- * Retrieves the complete real-time status snapshot from MongoDB.
+ * Retrieves the complete real-time status snapshot from MySQL.
  */
 export async function getStatusSnapshot(): Promise<CarParkStatus> {
-  const db = await getDb();
-  await ensureDbInitialized(db);
-
+  await ensureDbInitialized();
+  const pool = getPool();
   const now = new Date();
 
   // Read bays
-  const baysCol = db.collection<BayDocument>("bays");
-  const bayDocs = await baysCol.find({ _id: { $in: [1, 2, 3] } }).toArray();
+  const [bayRows] = await pool.query<BayDbRow[]>(
+    "SELECT id, occupied, changed_at FROM bays WHERE id IN (1, 2, 3) ORDER BY id ASC"
+  );
 
-  // Ensure default 3 bays if any missing
-  const bayMap = new Map(bayDocs.map((b) => [b._id, b]));
+  const bayMap = new Map<number, BayDbRow>(bayRows.map((b) => [b.id, b]));
   const formattedBays = ([1, 2, 3] as const).map((id) => {
-    const doc = bayMap.get(id);
+    const row = bayMap.get(id);
+    const occupied = row ? Boolean(row.occupied) : false;
+    const changedAtDate = row?.changed_at ? new Date(row.changed_at) : now;
     return {
       id,
-      occupied: doc ? doc.occupied : false,
-      changedAt: doc ? doc.changedAt.toISOString() : now.toISOString(),
+      occupied,
+      changedAt: changedAtDate.toISOString(),
     };
   });
 
   const freeCount = formattedBays.filter((b) => !b.occupied).length;
 
-  // Read device lastSeen
-  const deviceCol = db.collection<DeviceDocument>("device");
-  const deviceDoc = await deviceCol.findOne({ _id: "esp32" });
+  // Read device last_seen
+  const [deviceRows] = await pool.query<DeviceDbRow[]>(
+    "SELECT last_seen FROM device WHERE id = 'esp32' LIMIT 1"
+  );
 
-  const lastSeenDate = deviceDoc?.lastSeen ?? null;
+  const lastSeenDate = deviceRows.length > 0 && deviceRows[0].last_seen
+    ? new Date(deviceRows[0].last_seen)
+    : null;
+
   const isOnline =
     lastSeenDate !== null && now.getTime() - lastSeenDate.getTime() <= 25000;
 
-  // Read recent 10 events (ordered createdAt descending)
-  const eventsCol = db.collection<EventDocument>("events");
-  const recentDocs = await eventsCol
-    .find()
-    .sort({ createdAt: -1 })
-    .limit(10)
-    .toArray();
+  // Read recent 10 events (ordered created_at descending)
+  const [recentRows] = await pool.query<EventDbRow[]>(
+    "SELECT id, created_at, event, bay, state FROM events ORDER BY created_at DESC, id DESC LIMIT 10"
+  );
 
-  const formattedRecent = recentDocs.map((doc) => ({
-    id: (doc._id as { toString: () => string }).toString(),
-    createdAt: doc.createdAt.toISOString(),
-    event: doc.event,
-    ...(typeof doc.bay === "number" ? { bay: doc.bay } : {}),
-    ...(typeof doc.state === "boolean" ? { state: doc.state } : {}),
+  const formattedRecent = recentRows.map((row) => ({
+    id: String(row.id),
+    createdAt: new Date(row.created_at).toISOString(),
+    event: row.event,
+    ...(typeof row.bay === "number" ? { bay: row.bay } : {}),
+    ...(row.state !== null && row.state !== undefined
+      ? { state: Boolean(row.state) }
+      : {}),
   }));
 
   // Count ENTRY events since midnight in Asia/Colombo
   const colomboMidnight = getColomboMidnightUTC(now);
-  const vehiclesToday = await eventsCol.countDocuments({
-    event: "ENTRY",
-    createdAt: { $gte: colomboMidnight },
-  });
+  const [countRows] = await pool.query<CountDbRow[]>(
+    "SELECT COUNT(*) as cnt FROM events WHERE event = 'ENTRY' AND created_at >= ?",
+    [colomboMidnight]
+  );
+
+  const vehiclesToday = countRows.length > 0 ? Number(countRows[0].cnt) : 0;
 
   return {
     bays: formattedBays,

@@ -58,7 +58,7 @@ export default function SmartCarParkPage() {
               Unable to Load Telemetry Stream
             </h2>
             <p className="text-sm font-mono text-[var(--muted)] mt-1.5 max-w-md">
-              {error}. Verify that your MongoDB connection URI is configured in your environment.
+              {error}. Verify that your MySQL connection settings are configured in your environment.
             </p>
             <button
               onClick={() => refetch()}

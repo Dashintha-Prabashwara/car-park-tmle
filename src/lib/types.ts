@@ -1,9 +1,7 @@
-import type { ObjectId } from "mongodb";
-
-export interface BayDocument {
-  _id: 1 | 2 | 3;
+export interface BayRow {
+  id: 1 | 2 | 3;
   occupied: boolean;
-  changedAt: Date;
+  changed_at: Date;
 }
 
 export type EventType =
@@ -14,17 +12,17 @@ export type EventType =
   | "FULL"
   | "HEARTBEAT";
 
-export interface EventDocument {
-  _id?: ObjectId;
-  createdAt: Date;
+export interface EventRow {
+  id?: number;
+  created_at: Date;
   event: EventType;
-  bay?: number;
-  state?: boolean;
+  bay?: number | null;
+  state?: boolean | null;
 }
 
-export interface DeviceDocument {
-  _id: "esp32";
-  lastSeen: Date;
+export interface DeviceRow {
+  id: "esp32";
+  last_seen: Date;
 }
 
 export interface BayStatus {
