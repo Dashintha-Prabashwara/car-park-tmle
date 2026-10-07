@@ -7,10 +7,10 @@ export function formatColomboTime(
   dateInput: string | Date | null | undefined,
   includeSeconds = true
 ): string {
-  if (!dateInput) return "--:--:--";
+  if (!dateInput) return "-";
   try {
     const d = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
-    if (isNaN(d.getTime())) return "--:--:--";
+    if (isNaN(d.getTime())) return "-";
 
     return new Intl.DateTimeFormat("en-GB", {
       timeZone: "Asia/Colombo",
@@ -20,7 +20,7 @@ export function formatColomboTime(
       hour12: false,
     }).format(d);
   } catch {
-    return "--:--:--";
+    return "-";
   }
 }
 
@@ -28,7 +28,7 @@ export function formatColomboTime(
  * Formats changedAt into "since HH:mm" in Asia/Colombo timezone.
  */
 export function formatSinceTime(dateInput: string | Date | null | undefined): string {
-  if (!dateInput) return "since --:--";
+  if (!dateInput) return "since -";
   const timeStr = formatColomboTime(dateInput, false);
   return `since ${timeStr}`;
 }

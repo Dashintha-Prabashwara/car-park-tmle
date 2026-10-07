@@ -1,4 +1,4 @@
-# 🚗 Smart Car Park — Real-Time IoT Telemetry Dashboard
+# 🚗 Smart Car Park - Real-Time IoT Telemetry Dashboard
 
 A real-time SCADA telemetry web dashboard for a physical 3-bay miniature car park controlled by an ESP32 microcontroller. Built with **Next.js (App Router, TypeScript)**, **Tailwind CSS**, and **MongoDB Atlas** using the official `mongodb` driver. Designed for high reliability, real-time Server-Sent Events (SSE) streaming with automated polling fallback, and seamless deployment on **Vercel**.
 
@@ -10,7 +10,7 @@ A real-time SCADA telemetry web dashboard for a physical 3-bay miniature car par
 - **Entry Gate (Servo Barrier)**: Has its own sensor. Opens when a car arrives and at least one bay is free, then closes once the vehicle has cleared. If all 3 bays are occupied, the entry barrier remains closed and the ESP32 reports `FULL`.
 - **Exit Gate (Servo Barrier)**: Opens when a car approaches from inside, then closes once passed.
 - **Interlock**: Only one servo barrier can be open at any time.
-- **ESP32 Data Stream**: The ESP32 is the single source of truth. It pushes state via HTTPS POST to `/api/update`. The website never sends commands to the ESP32 and never fabricates or simulates state—every value shown on the dashboard comes directly from MongoDB.
+- **ESP32 Data Stream**: The ESP32 is the single source of truth. It pushes state via HTTPS POST to `/api/update`. The website never sends commands to the ESP32 and never fabricates or simulates state - every value shown on the dashboard comes directly from MongoDB.
 
 ---
 

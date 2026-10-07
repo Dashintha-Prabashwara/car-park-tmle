@@ -1,7 +1,7 @@
 "use client";
 
 import { BayStatus } from "@/lib/types";
-import { Car, Download } from "lucide-react";
+import { CarFront, SquareParking } from "lucide-react";
 
 interface LotSchematicProps {
   bays: BayStatus[];
@@ -70,14 +70,14 @@ export function LotSchematic({ bays }: LotSchematicProps) {
                 <div className="my-auto flex flex-col items-center justify-center">
                   {isOccupied ? (
                     <div className="w-20 h-28 rounded-lg bg-[var(--card-high)] border border-rose-500/50 flex flex-col items-center justify-center text-rose-400 shadow-md">
-                      <Car className="w-9 h-9" />
+                      <CarFront className="w-9 h-9" />
                       <span className="text-[10px] font-mono tracking-wider text-[var(--muted)] mt-1.5 uppercase font-bold">
                         VEHICLE
                       </span>
                     </div>
                   ) : (
                     <div className="w-20 h-28 rounded-lg border-2 border-dashed border-emerald-500/40 flex flex-col items-center justify-center text-emerald-400/80">
-                      <Download className="w-7 h-7" />
+                      <SquareParking className="w-8 h-8" />
                       <span className="text-[10px] font-mono tracking-wider uppercase mt-1.5 font-bold">
                         FREE
                       </span>

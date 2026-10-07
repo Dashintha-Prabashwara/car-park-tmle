@@ -45,6 +45,11 @@ body {
   font-family: var(--font-sans);
   min-height: 100vh;
   transition: background-color 0.25s ease, color 0.25s ease;
+  font-variant-ligatures: none;
+}
+
+* {
+  font-variant-ligatures: none;
 }
 
 /* Subtle pulse for online indicator */

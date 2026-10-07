@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { formatColomboTime } from "@/lib/format";
-import { Radio, Sun, Moon } from "lucide-react";
+import { SquareParking, Sun, Moon } from "lucide-react";
 
 interface HeaderProps {
   isOnline: boolean;
@@ -41,7 +41,7 @@ export function Header({ isOnline, serverTime }: HeaderProps) {
         {/* Brand & System Title */}
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-lg bg-sky-500/10 border border-sky-400/30 flex items-center justify-center text-sky-400">
-            <Radio className="w-5 h-5 animate-pulse" />
+            <SquareParking className="w-5 h-5" />
           </div>
           <div>
             <h1 className="text-lg sm:text-xl font-bold tracking-tight text-[var(--foreground)] uppercase">

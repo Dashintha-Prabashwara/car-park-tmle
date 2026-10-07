@@ -1,6 +1,6 @@
 "use client";
 
-import { Car } from "lucide-react";
+import { CarFront } from "lucide-react";
 
 interface VehiclesTodayCardProps {
   vehiclesToday: number;
@@ -14,7 +14,7 @@ export function VehiclesTodayCard({ vehiclesToday }: VehiclesTodayCardProps) {
           Daily Throughput Volume
         </span>
         <div className="w-8 h-8 rounded-lg bg-sky-500/10 border border-sky-400/30 flex items-center justify-center text-sky-400">
-          <Car className="w-4 h-4" />
+          <CarFront className="w-4 h-4" />
         </div>
       </div>
 

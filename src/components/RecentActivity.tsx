@@ -3,10 +3,29 @@
 import { useEffect, useRef } from "react";
 import { RecentEvent } from "@/lib/types";
 import { formatColomboTime, formatEventSentence } from "@/lib/format";
-import { History, Inbox } from "lucide-react";
+import { History, Inbox, LogIn, LogOut, CarFront, SquareParking, AlertTriangle, Activity } from "lucide-react";
 
 interface RecentActivityProps {
   events: RecentEvent[];
+}
+
+function renderEventIcon(event: string, state?: boolean) {
+  switch (event) {
+    case "ENTRY":
+      return <LogIn className="w-3 h-3 shrink-0" />;
+    case "EXIT":
+      return <LogOut className="w-3 h-3 shrink-0" />;
+    case "BAY":
+      return state ? (
+        <CarFront className="w-3 h-3 shrink-0" />
+      ) : (
+        <SquareParking className="w-3 h-3 shrink-0" />
+      );
+    case "FULL":
+      return <AlertTriangle className="w-3 h-3 shrink-0" />;
+    default:
+      return <Activity className="w-3 h-3 shrink-0" />;
+  }
 }
 
 export function RecentActivity({ events }: RecentActivityProps) {
@@ -76,9 +95,10 @@ export function RecentActivity({ events }: RecentActivityProps) {
                     {/* Category Badge */}
                     <td className="py-3 px-3 whitespace-nowrap">
                       <span
-                        className={`inline-block px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider ${badgeClass}`}
+                        className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider ${badgeClass}`}
                       >
-                        {category}
+                        {renderEventIcon(event.event, event.state)}
+                        <span>{category}</span>
                       </span>
                     </td>
 
