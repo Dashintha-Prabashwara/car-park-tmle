@@ -4,7 +4,6 @@ import { processEsp32Update } from "@/lib/db";
 import { EventType, UpdatePayload } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
-export const preferredRegion = "sin1";
 
 const VALID_EVENTS: EventType[] = [
   "SYSTEM_START",

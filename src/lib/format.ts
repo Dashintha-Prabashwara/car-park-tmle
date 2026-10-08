@@ -112,6 +112,18 @@ export function formatEventSentence(event: RecentEvent): {
         category: "DEVICE",
         badgeClass: "bg-slate-500/20 text-slate-400 border border-slate-500/40",
       };
+    case "ONLINE":
+      return {
+        sentence: "Controller connection established (Online)",
+        category: "SYSTEM",
+        badgeClass: "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40",
+      };
+    case "OFFLINE":
+      return {
+        sentence: "Controller lost connection (Offline)",
+        category: "ALERT",
+        badgeClass: "bg-rose-500/20 text-rose-400 border border-rose-500/40",
+      };
     default:
       return {
         sentence: `Event recorded: ${event.event}`,
@@ -120,3 +132,29 @@ export function formatEventSentence(event: RecentEvent): {
       };
   }
 }
+
+/**
+ * Formats a real-time live dwell counter down to seconds (e.g. "12m 04s", "1h 05m 12s", "45s")
+ */
+export function formatLiveDwellTimer(
+  dateInput: string | Date | null | undefined,
+  nowMs = Date.now()
+): string {
+  if (!dateInput) return "0s";
+  const d = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
+  const diffMs = Math.max(0, nowMs - d.getTime());
+  const totalSeconds = Math.floor(diffMs / 1000);
+
+  if (totalSeconds < 60) {
+    return `${totalSeconds}s`;
+  }
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  if (minutes < 60) {
+    return `${minutes}m ${seconds.toString().padStart(2, "0")}s`;
+  }
+  const hours = Math.floor(minutes / 60);
+  const remMinutes = minutes % 60;
+  return `${hours}h ${remMinutes.toString().padStart(2, "0")}m ${seconds.toString().padStart(2, "0")}s`;
+}
+
